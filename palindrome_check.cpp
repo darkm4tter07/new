@@ -2,23 +2,19 @@
 #include <string>
 #include <algorithm>
 
-using namespace std;
-
-bool isPalindrome(const string& str) {
-    string reversed = str;
-    reverse(reversed.begin(), reversed.end());
-    return str == reversed;
+bool isPalindrome(const std::string& str) {
+    std::string temp = str;
+    std::transform(temp.begin(), temp.end(), temp.begin(), ::tolower);
+    return temp == std::string(temp.rbegin(), temp.rend());
 }
 
 int main() {
-    string input;
-    cin >> input;
-
+    std::string input;
+    std::getline(std::cin, input);
     if (isPalindrome(input)) {
-        cout << "true" << endl;
+        std::cout << "The string is a palindrome" << std::endl;
     } else {
-        cout << "false" << endl;
+        std::cout << "The string is not a palindrome" << std::endl;
     }
-
     return 0;
 }
