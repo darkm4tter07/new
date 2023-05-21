@@ -2,7 +2,15 @@ name: Read and Check Palindrome
 on:
   pull_request:
     types:
+      - opened
       - synchronize
+      - closed
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  
 
 jobs:
   palindrome_check:
