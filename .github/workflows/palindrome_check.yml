@@ -35,8 +35,7 @@ jobs:
         run: |
           echo "${{ steps.checkPalindrome.outputs.text }}" > $HOME/input.txt
 
-      - name: Check palindrome with C++
-        if: steps.checkPalindrome.outputs.text != ''
+      - name: Compile and run palindrome_check
         run: |
           g++ -o palindrome_check - <<EOF
           #include <iostream>
