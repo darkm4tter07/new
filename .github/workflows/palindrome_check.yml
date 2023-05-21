@@ -1,37 +1,53 @@
-name: Pull Request Workflow
+name: Check Palindrome on Pull Request
 
 on:
   pull_request:
     types:
       - opened
       - synchronize
-      - closed
     branches:
       - main
     workflow_dispatch:
 
 jobs:
-  checkPalindrome:
+  palindromeCheck:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Check if text is a palindrome
+      - name: Read text file
+        id: read_text
         run: |
-          echo "${{ github.event.pull_request.head.repo.full_name }}"
+          changed_files=$(git diff --name-only origin/master..HEAD)
           text_file="palindrome.txt"
-
-          if [ -f "$text_file" ]; then
+          
+          if echo "$changed_files" | grep -q "$text_file"; then
             text=$(cat "$text_file")
             echo "::set-output name=text::$text"
           else
-            echo "Text file not found."
-            exit 1
+            echo "No changes found in the text file."
           fi
 
-      - name: Compile and run palindrome_check
+      - name: Check palindrome with C++
+        if: steps.read_text.outputs.text != ''
         run: |
+          echo "${{ steps.read_text.outputs.text }}" > input.txt
           g++ -o palindrome_check palindrome_check.cpp
-          ./palindrome_check <<< "${{ steps.checkPalindrome.outputs.text }}"
+          ./palindrome_check < input.txt
+
+      - name: Add comment on pull request
+        if: steps.read_text.outputs.text != ''
+        uses: actions/github-script@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const isPalindrome = ${{ steps.palindrome_check.outputs.palindrome }};
+            const comment = isPalindrome ? "The text is a palindrome." : "The text is not a palindrome.";
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            })
