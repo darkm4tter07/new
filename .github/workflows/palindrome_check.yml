@@ -1,4 +1,5 @@
-name: Read and Check Palindrome
+name: Pull Request Workflow
+
 on:
   pull_request:
     types:
@@ -7,70 +8,61 @@ on:
       - closed
     branches:
       - main
-  push:
-    branches:
-      - main
-  
+    workflow_dispatch:
+    
 
 jobs:
-  palindrome_check:
+  checkPalindrome:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out code
+      - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Read updated text file
-        id: read_text
+      - name: Check if text is a palindrome
         run: |
-          changed_files=$(git diff --name-only origin/master..HEAD)
+          echo "${{ github.event.pull_request.head.repo.full_name }}"
           text_file="palindrome.txt"
-          
-          if echo "$changed_files" | grep -q "$text_file"; then
+
+          if [ -f "$text_file" ]; then
             text=$(cat "$text_file")
             echo "::set-output name=text::$text"
           else
-            echo "No changes found in the text file."
+            echo "Text file not found."
+            exit 1
           fi
 
-      - name: Checking palindrome
-        if: steps.read_text.outputs.text != ''
+      - name: Check palindrome with C++
+        if: steps.checkPalindrome.outputs.text != ''
         run: |
-          echo "${{ steps.read_text.outputs.text }}" > input.txt
+          echo "${{ steps.checkPalindrome.outputs.text }}" > input.txt
           g++ -o palindrome_check - <<EOF
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <algorithm>
+          #include <iostream>
+          #include <string>
+          #include <algorithm>
 
-using namespace std;
+          using namespace std;
 
-bool isPalindrome(const string& text) {
-    string normalizedText;
-    copy_if(text.begin(), text.end(), back_inserter(normalizedText), [](char c) {
-        return isalnum(c);
-    });
-    transform(normalizedText.begin(), normalizedText.end(), normalizedText.begin(), ::tolower);
-    return normalizedText == string(normalizedText.rbegin(), normalizedText.rend());
-}
+          bool isPalindrome(const string& str) {
+            string reversed = str;
+            reverse(reversed.begin(), reversed.end());
+            return str == reversed;
+          }
 
-int main() {
-    ifstream file("input.txt");
-    if (!file) {
-        cerr << "Error: Failed to open file 'input.txt'." << endl;
-        return 1;
-    }
+          int main() {
+            string input;
+            cin >> input;
 
-    string text;
-    getline(file, text);
+            if (isPalindrome(input)) {
+              cout << "The text is a palindrome." << endl;
+            } else {
+              cout << "The text is not a palindrome." << endl;
+            }
 
-    if (isPalindrome(text)) {
-        cout << "The text is a palindrome." << endl;
-    } else {
-        cout << "The text is not a palindrome." << endl;
-    }
+            return 0;
+          }
+          EOF
 
-    return 0;
-}
-EOF
-          ./palindrome_check
+      - name: Run palindrome check
+        run: |
+          ./palindrome_check < input.txt
