@@ -1,53 +1,31 @@
-name: Check Palindrome on Pull Request
+name: Palindrome Check
 
 on:
   pull_request:
-    types:
-      - opened
-      - synchronize
-    branches:
-      - main
-    workflow_dispatch:
+    types: [opened, synchronize]
+  workflow_dispatch:
 
 jobs:
-  palindromeCheck:
+  palindrome_check:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Check out code
         uses: actions/checkout@v2
 
-      - name: Read text file
-        id: read_text
-        run: |
-          changed_files=$(git diff --name-only origin/main..HEAD)
-          text_file="palindrome.txt"
-          
-          if echo "$changed_files" | grep -q "$text_file"; then
-            text=$(cat "$text_file")
-            echo "::set-output name=text::$text"
-          else
-            echo "No changes found in the text file."
-          fi
+      - name: Compile C++ program
+        run: g++ palindrome_check.cpp -o palindrome_check
 
-      - name: Check palindrome with C++
-        if: steps.read_text.outputs.text != ''
+      - name: Check if file changes form a palindrome
         run: |
-          echo "${{ steps.read_text.outputs.text }}" > input.txt
-          g++ -o palindrome_check palindrome_check.cpp
-          ./palindrome_check < input.txt
+          # Check if the changes made in the text file form a palindrome
+          file_changes=$(git diff --name-only ${{ github.base_ref }}...${{ github.head_ref }})
 
-      - name: Add comment on pull request
-        if: steps.read_text.outputs.text != ''
-        uses: actions/github-script@v4
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const isPalindrome = ${{ steps.palindrome_check.outputs.palindrome }};
-            const comment = isPalindrome ? "The text is a palindrome." : "The text is not a palindrome.";
-            github.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            })
+          for file in $file_changes; do
+            if [[ $file == *.txt ]]; then
+              changed_content=$(git diff ${{ github.base_ref }}...${{ github.head_ref }} -- $file | tail -n +5 | awk '{print $1}' | tr -d '+-')
+              echo "$changed_content" > temp.txt
+
+              ./palindrome_check temp.txt
+            fi
+          done
