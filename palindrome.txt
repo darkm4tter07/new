@@ -2,3 +2,4 @@ malyalam
 sakivikas
 thislineisnotapalindrome
 thislineispalindrome
+bananab
