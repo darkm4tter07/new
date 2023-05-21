@@ -31,39 +31,7 @@ jobs:
             exit 1
           fi
 
-      - name: Create input.txt file
-        run: |
-          echo "${{ steps.checkPalindrome.outputs.text }}" > $HOME/input.txt
-
       - name: Compile and run palindrome_check
         run: |
-          g++ -o palindrome_check - <<EOF
-          #include <iostream>
-          #include <string>
-          #include <algorithm>
-
-          using namespace std;
-
-          bool isPalindrome(const string& str) {
-            string reversed = str;
-            reverse(reversed.begin(), reversed.end());
-            return str == reversed;
-          }
-
-          int main() {
-            string input;
-            cin >> input;
-
-            if (isPalindrome(input)) {
-              cout << "The text is a palindrome." << endl;
-            } else {
-              cout << "The text is not a palindrome." << endl;
-            }
-
-            return 0;
-          }
-          EOF
-
-      - name: Run palindrome check
-        run: |
-          $HOME/palindrome_check < $HOME/input.txt
+          g++ -o palindrome_check palindrome_check.cpp
+          ./palindrome_check <<< "${{ steps.checkPalindrome.outputs.text }}"
