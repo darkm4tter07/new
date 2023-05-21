@@ -67,4 +67,4 @@ jobs:
 
       - name: Run palindrome check
         run: |
-          ./palindrome_check < $HOME/input.txt
+          $HOME/palindrome_check < $HOME/input.txt
