@@ -1,0 +1,68 @@
+name: Read and Check Palindrome
+on:
+  pull_request:
+    types:
+      - synchronize
+
+jobs:
+  palindrome_check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Read updated text file
+        id: read_text
+        run: |
+          changed_files=$(git diff --name-only origin/master..HEAD)
+          text_file="palindrome.txt"
+          
+          if echo "$changed_files" | grep -q "$text_file"; then
+            text=$(cat "$text_file")
+            echo "::set-output name=text::$text"
+          else
+            echo "No changes found in the text file."
+          fi
+
+      - name: Checking palindrome
+        if: steps.read_text.outputs.text != ''
+        run: |
+          echo "${{ steps.read_text.outputs.text }}" > input.txt
+          g++ -o palindrome_check - <<EOF
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <algorithm>
+
+using namespace std;
+
+bool isPalindrome(const string& text) {
+    string normalizedText;
+    copy_if(text.begin(), text.end(), back_inserter(normalizedText), [](char c) {
+        return isalnum(c);
+    });
+    transform(normalizedText.begin(), normalizedText.end(), normalizedText.begin(), ::tolower);
+    return normalizedText == string(normalizedText.rbegin(), normalizedText.rend());
+}
+
+int main() {
+    ifstream file("input.txt");
+    if (!file) {
+        cerr << "Error: Failed to open file 'input.txt'." << endl;
+        return 1;
+    }
+
+    string text;
+    getline(file, text);
+
+    if (isPalindrome(text)) {
+        cout << "The text is a palindrome." << endl;
+    } else {
+        cout << "The text is not a palindrome." << endl;
+    }
+
+    return 0;
+}
+EOF
+          ./palindrome_check
