@@ -15,9 +15,9 @@ int main() {
     cin >> input;
 
     if (isPalindrome(input)) {
-        cout << "The text is a palindrome." << endl;
+        cout << "true" << endl;
     } else {
-        cout << "The text is not a palindrome." << endl;
+        cout << "false" << endl;
     }
 
     return 0;
